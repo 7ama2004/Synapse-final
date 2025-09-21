@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { Plus, Copy, Trash2, Settings } from 'lucide-react'
 import { useCanvasStore } from '@/stores/canvasStore'
 
 interface ContextMenuProps {
@@ -12,89 +11,67 @@ interface ContextMenuProps {
 
 export function ContextMenu({ x, y, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
-  const { selectedBlocks, deleteBlock, addBlock } = useCanvasStore()
-  
+  const { addBlock } = useCanvasStore()
+
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         onClose()
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [onClose])
-  
-  const handleAddBlock = () => {
-    // Add a new block at the context menu position
+
+  const handleAddBlock = (type: string) => {
     addBlock({
-      type: 'input/text',
+      type,
       position: { x, y },
       data: {
-        name: 'Text Input',
+        name: type,
+        description: `A ${type} block`,
         category: 'input',
-        color: '#10B981',
         config: {},
         inputs: [],
-        outputs: [
-          {
-            id: 'text',
-            type: 'output',
-            dataType: 'string',
-            label: 'Text',
-          },
-        ],
-      },
+        outputs: []
+      }
     })
     onClose()
   }
-  
-  const handleDelete = () => {
-    selectedBlocks.forEach(id => deleteBlock(id))
-    onClose()
-  }
-  
+
   return (
     <div
       ref={menuRef}
-      className="absolute bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 min-w-[160px] z-50"
+      className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 z-50"
       style={{ left: x, top: y }}
     >
-      <button
-        className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-        onClick={handleAddBlock}
-      >
-        <Plus className="h-4 w-4" />
+      <div className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
         Add Block
-      </button>
-      
-      <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-      
+      </div>
       <button
-        className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-        disabled={selectedBlocks.size === 0}
+        onClick={() => handleAddBlock('Text Input')}
+        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
-        <Copy className="h-4 w-4" />
-        Duplicate
+        Text Input
       </button>
-      
       <button
-        className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-        disabled={selectedBlocks.size === 0}
+        onClick={() => handleAddBlock('File Upload')}
+        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
-        <Settings className="h-4 w-4" />
-        Configure
+        File Upload
       </button>
-      
-      <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
-      
       <button
-        className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-red-600 dark:text-red-400"
-        onClick={handleDelete}
-        disabled={selectedBlocks.size === 0}
+        onClick={() => handleAddBlock('Summarizer')}
+        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
       >
-        <Trash2 className="h-4 w-4" />
-        Delete
+        Summarizer
+      </button>
+      <button
+        onClick={() => handleAddBlock('Question Generator')}
+        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        Question Generator
       </button>
     </div>
   )

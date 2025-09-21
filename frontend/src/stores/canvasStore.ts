@@ -10,6 +10,7 @@ interface CanvasState {
   connections: Map<string, Connection>
   selectedBlocks: Set<string>
   viewport: Viewport
+  selectionBox: { x: number; y: number; width: number; height: number } | null
   
   // Actions
   addBlock: (block: Omit<BlockNode, 'id'>) => string
@@ -25,6 +26,7 @@ interface CanvasState {
   deselectAll: () => void
   
   setViewport: (viewport: Viewport) => void
+  setSelectionBox: (box: { x: number; y: number; width: number; height: number } | null) => void
   
   // Workflow operations
   clearCanvas: () => void
@@ -41,6 +43,7 @@ export const useCanvasStore = create<CanvasState>()(
         connections: new Map(),
         selectedBlocks: new Set(),
         viewport: { x: 0, y: 0, scale: 1 },
+        selectionBox: null,
         
         // Block actions
         addBlock: (block) => {
@@ -155,6 +158,12 @@ export const useCanvasStore = create<CanvasState>()(
         setViewport: (viewport) => {
           set((state) => {
             state.viewport = viewport
+          })
+        },
+        
+        setSelectionBox: (box) => {
+          set((state) => {
+            state.selectionBox = box
           })
         },
         
