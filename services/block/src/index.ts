@@ -1,9 +1,14 @@
 import express from 'express'
+import cors from 'cors'
 import { Pool } from 'pg'
 import { createClient } from 'redis'
 import { blockRouter } from './routes/blocks'
 import { logger } from './utils/logger'
 import { errorHandler } from './middleware/errorHandler'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 const app = express()
 
@@ -17,6 +22,7 @@ const redisClient = createClient({
 })
 
 // Middleware
+app.use(cors())
 app.use(express.json())
 
 // Health check

@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import { Pool } from 'pg'
 import { createClient } from 'redis'
 import { Queue } from 'bullmq'
@@ -6,6 +7,10 @@ import { userRouter } from './routes/users'
 import { executionRouter } from './routes/executions'
 import { logger } from './utils/logger'
 import { errorHandler } from './middleware/errorHandler'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 const app = express()
 
@@ -27,6 +32,7 @@ const executionQueue = new Queue('workflow-execution', {
 })
 
 // Middleware
+app.use(cors())
 app.use(express.json())
 
 // Health check

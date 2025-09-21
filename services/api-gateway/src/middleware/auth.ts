@@ -3,72 +3,57 @@ import jwt from 'jsonwebtoken'
 import jwksClient from 'jwks-rsa'
 import { logger } from '../utils/logger'
 
-// Public endpoints that don't require authentication
-const PUBLIC_ENDPOINTS = [
-  '/api/workflows/public',
-  '/api/blocks/public',
-  '/api/auth/login',
-  '/api/auth/register',
-]
-
-// Initialize JWKS client for Auth0
+// JWKS client for Auth0
 const client = jwksClient({
-  jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
-  cache: true,
-  rateLimit: true,
-  jwksRequestsPerMinute: 5,
+  jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`
 })
 
 function getKey(header: any, callback: any) {
   client.getSigningKey(header.kid, (err, key) => {
-    if (err) {
-      callback(err)
-    } else {
-      const signingKey = key?.getPublicKey()
-      callback(null, signingKey)
-    }
+    const signingKey = key?.getPublicKey()
+    callback(null, signingKey)
   })
 }
 
-export async function authMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  // Skip auth for public endpoints
-  if (PUBLIC_ENDPOINTS.some(endpoint => req.path.startsWith(endpoint))) {
-    return next()
-  }
-
-  const token = req.headers.authorization?.split(' ')[1]
-
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' })
-  }
-
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Verify JWT token
-    jwt.verify(
-      token,
-      getKey,
-      {
-        audience: process.env.AUTH0_AUDIENCE,
-        issuer: `https://${process.env.AUTH0_DOMAIN}/`,
-        algorithms: ['RS256'],
-      },
-      (err, decoded) => {
-        if (err) {
-          logger.error('JWT verification failed:', err)
-          return res.status(401).json({ error: 'Invalid token' })
-        }
+    // Skip auth for health checks and public routes
+    if (req.path === '/health' || req.path.startsWith('/public')) {
+      return next()
+    }
 
-        // Attach user info to request
-        (req as any).user = decoded
-        next()
+    const token = req.headers.authorization?.replace('Bearer ', '')
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' })
+    }
+
+    // In development, allow bypassing auth
+    if (process.env.NODE_ENV === 'development' && token === 'dev-token') {
+      (req as any).user = {
+        sub: 'dev-user-id',
+        email: 'dev@example.com',
+        roles: ['user']
       }
-    )
+      return next()
+    }
+
+    // Verify JWT token
+    jwt.verify(token, getKey, {
+      audience: process.env.AUTH0_AUDIENCE,
+      issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+      algorithms: ['RS256']
+    }, (err, decoded) => {
+      if (err) {
+        logger.error('Token verification failed:', err)
+        return res.status(401).json({ error: 'Invalid token' })
+      }
+      
+      (req as any).user = decoded
+      next()
+    })
   } catch (error) {
     logger.error('Auth middleware error:', error)
-    res.status(500).json({ error: 'Authentication failed' })
+    res.status(500).json({ error: 'Authentication error' })
   }
 }

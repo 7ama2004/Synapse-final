@@ -9,6 +9,10 @@ import { rateLimiter } from './middleware/rateLimiter'
 import { errorHandler } from './middleware/errorHandler'
 import { logger } from './utils/logger'
 import { setupWebSocket } from './websocket'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
 
 const app = express()
 const httpServer = createServer(app)
