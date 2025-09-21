@@ -2,12 +2,20 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm install
+
+# Install dependencies
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Run with nodemon for auto-reload
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose port
+EXPOSE 4000
+
+# Start development server
 CMD ["npm", "run", "dev"]

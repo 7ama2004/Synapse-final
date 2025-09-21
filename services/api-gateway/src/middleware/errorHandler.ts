@@ -1,28 +1,26 @@
 import { Request, Response, NextFunction } from 'express'
 import { logger } from '../utils/logger'
 
-export function errorHandler(
-  err: any,
+export const errorHandler = (
+  error: Error,
   req: Request,
   res: Response,
   next: NextFunction
-) {
-  logger.error('Error:', {
-    error: err.message,
-    stack: err.stack,
-    path: req.path,
+) => {
+  logger.error('API Gateway error:', {
+    error: error.message,
+    stack: error.stack,
+    url: req.url,
     method: req.method,
-    body: req.body,
-    user: (req as any).user?.sub,
+    body: req.body
   })
 
   // Don't leak error details in production
-  const isDev = process.env.NODE_ENV === 'development'
+  const isDevelopment = process.env.NODE_ENV === 'development'
   
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal server error',
-      ...(isDev && { stack: err.stack }),
-    },
+  res.status(500).json({
+    error: 'Internal server error',
+    message: isDevelopment ? error.message : 'Something went wrong',
+    ...(isDevelopment && { stack: error.stack })
   })
 }
